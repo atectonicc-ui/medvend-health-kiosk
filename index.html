@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>MediVend Health Kiosk</title>
+<link rel="stylesheet" href="style.css?v=8" />
+</head>
+<body>
+
+<div class="kiosk-stage">
+  <div class="kiosk-scaler" id="kioskScaler">
+    <div class="kiosk" id="kiosk" data-theme="light">
+
+      <!-- ===== Header ===== -->
+      <div class="kiosk-header">
+        <div class="header-brand">
+          <div class="header-logo" id="headerLogo"></div>
+          <div class="brand-text">
+            <span class="brand-name" data-i18n="brandName">MediVend Health Kiosk</span>
+            <span class="brand-sub" data-i18n="brandSub">24/7 Medical Supplies</span>
+          </div>
+        </div>
+
+        <div class="header-center">
+          <div class="header-clock" id="headerClock"></div>
+          <button class="emergency-call-btn" id="callNurseBtn">
+            <span id="callNurseIcon"></span>
+            <span data-i18n="callNurse">Nearby Care &amp; Pharmacy</span>
+          </button>
+        </div>
+
+        <div class="header-right">
+          <button class="header-icon-btn" id="langBtn"><span id="langIcon"></span><span id="langCode">EN</span></button>
+          <button class="header-icon-btn" id="a11yBtn"><span id="a11yIcon"></span></button>
+          <button class="code-btn" id="codeToggle">&lt;/&gt; code</button>
+
+          <div class="header-dropdown" id="langDropdown">
+            <div class="dd-title" data-i18n="ddLanguage">Language</div>
+            <div class="lang-choice-row">
+              <button class="lang-btn active" id="langEnBtn">English</button>
+              <button class="lang-btn" id="langEsBtn">Español</button>
+            </div>
+          </div>
+
+          <div class="header-dropdown" id="a11yDropdown">
+            <div class="dd-title" data-i18n="ddAccessibility">Accessibility</div>
+            <div class="dd-option-row">
+              <div>
+                <div class="dd-label" data-i18n="ddLargeText">Larger Text</div>
+                <div class="dd-sub" data-i18n="ddLargeTextSub">Increase text size kiosk-wide</div>
+              </div>
+              <div class="toggle-switch" id="largeTextToggle"><div class="knob"></div></div>
+            </div>
+            <div class="dd-option-row">
+              <div>
+                <div class="dd-label" data-i18n="ddHighContrast">High Contrast</div>
+                <div class="dd-sub" data-i18n="ddHighContrastSub">Stronger borders & colors</div>
+              </div>
+              <div class="toggle-switch" id="highContrastToggle"><div class="knob"></div></div>
+            </div>
+            <div class="dd-option-row">
+              <div>
+                <div class="dd-label" data-i18n="ddDarkMode">Dark Mode</div>
+                <div class="dd-sub" data-i18n="ddDarkModeSub">Easier on the eyes at night</div>
+              </div>
+              <div class="toggle-switch" id="darkModeToggle"><div class="knob"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Idle / attract screen ===== -->
+      <div class="idle-overlay" id="idleOverlay">
+        <div class="idle-logo" id="idleLogo"></div>
+        <h1 class="idle-title" data-i18n="idleTitle">MediVend Health Kiosk</h1>
+        <p class="idle-sub" data-i18n="idleSub">Over-the-counter medicine and first aid supplies, available around the clock.</p>
+        <div class="idle-tip" id="idleTip"></div>
+        <div class="idle-demo-badge">DEMO</div>
+        <button class="idle-cta" id="idleCta" data-i18n="idleCtaText">TOUCH TO BROWSE MEDICAL &amp; FIRST AID SUPPLIES</button>
+        <div class="idle-credit">By Chetan Nallapaneni &middot; For NC HOSA Medical Innovations</div>
+      </div>
+
+      <!-- ===== Catalog ===== -->
+      <div class="catalog-scroll" id="catalogScroll">
+
+        <div class="filter-bar" id="filterBar"></div>
+
+        <div class="search-bar-wrap">
+          <div class="search-field">
+            <span id="searchIcon"></span>
+            <input type="text" id="searchInput" data-i18n-placeholder="searchPlaceholder" placeholder="Search by item or symptom (e.g. &quot;Headache&quot;, &quot;Bandages&quot;, &quot;Burn relief&quot;)" autocomplete="off" />
+          </div>
+          <button class="icon-square-btn mic" id="micBtn"><span id="micIcon"></span></button>
+          <button class="icon-square-btn helper" id="helperBtn"><span id="helperIcon"></span></button>
+        </div>
+
+        <button class="ai-assistant-banner" id="aiAssistantBtn">
+          <div class="aab-icon"><span id="aabIcon"></span></div>
+          <div class="aab-text">
+            <div class="aab-title" data-i18n="aiAssistantTitle">AI Assistant</div>
+            <div class="aab-sub" data-i18n="aiAssistantSub">Tap to talk or type about your symptoms</div>
+          </div>
+          <span id="aabChevron"></span>
+        </button>
+
+        <div class="search-banner warn" id="searchBanner">
+          <span id="bannerIcon"></span>
+          <div>
+            <div id="bannerText"></div>
+            <button class="nr-care-btn" id="bannerCareBtn" data-i18n="chatCareBtn">Nearby Care &amp; Pharmacy</button>
+          </div>
+        </div>
+
+        <div class="no-results" id="noResults">
+          <div class="nr-title" data-i18n="noResultsTitle">No matching items</div>
+          <div data-i18n="noResultsSub">Try browsing a category above, or ask "Unsure what you need?" for help.</div>
+          <button class="nr-care-btn" id="noResultsCareBtn" data-i18n="chatCareBtn">Nearby Care &amp; Pharmacy</button>
+        </div>
+
+        <div class="product-grid" id="productGrid"></div>
+      </div>
+
+      <!-- ===== Cart footer ===== -->
+      <div class="cart-footer">
+        <div class="cart-count">
+          <div class="cc-badge"><span id="cartIcon"></span><span class="cc-num" id="cartCountNum">0</span></div>
+          <span class="cc-label" id="cartCountLabel" data-i18n="itemsSelected">0 items selected</span>
+        </div>
+        <div>
+          <div class="cart-total-label" data-i18n="total">TOTAL</div>
+          <div class="cart-total-value" id="cartTotalValue">$0.00</div>
+        </div>
+        <button class="review-pay-btn" id="reviewPayBtn" disabled>
+          <span data-i18n="reviewPay">REVIEW &amp; PAY</span>
+          <span id="reviewPayArrow"></span>
+        </button>
+      </div>
+
+      <!-- ===== Product detail modal ===== -->
+      <div class="modal-overlay" id="productModalOverlay">
+        <div class="modal-sheet">
+          <div class="modal-head">
+            <span class="modal-title" data-i18n="itemDetails">Item Details</span>
+            <button class="modal-close-btn" id="productModalClose"><span id="pdCloseIcon"></span></button>
+          </div>
+          <div class="modal-body" id="productModalBody"></div>
+          <div class="modal-footer">
+            <div class="qty-row">
+              <span class="qty-label" data-i18n="quantity">Quantity</span>
+              <div class="qty-stepper">
+                <button class="qty-btn" id="pdQtyMinus"><span id="pdMinusIcon"></span></button>
+                <span class="qty-value" id="pdQtyValue">1</span>
+                <button class="qty-btn" id="pdQtyPlus"><span id="pdPlusIcon"></span></button>
+              </div>
+            </div>
+            <button class="primary-btn" id="pdAddBtn" style="margin-top:16px;">
+              <span data-i18n="addToOrder">Add to Order</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Symptom selector modal ===== -->
+      <div class="modal-overlay" id="symptomModalOverlay">
+        <div class="modal-sheet">
+          <div class="modal-head">
+            <span class="modal-title" data-i18n="symptomTitle">Unsure what you need?</span>
+            <button class="modal-close-btn" id="symptomModalClose"><span id="symCloseIcon"></span></button>
+          </div>
+          <div class="modal-body">
+            <p style="margin-top:0;color:var(--muted);font-size:1rem;" data-i18n="symptomSub">Tap what's going on and we'll show you matching items.</p>
+            <div class="symptom-grid" id="symptomGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== AI Assistant chat modal ===== -->
+      <div class="modal-overlay" id="aiChatOverlay">
+        <div class="modal-sheet" style="max-height:92%;">
+          <div class="modal-head">
+            <span class="modal-title" data-i18n="aiAssistantTitle">AI Assistant</span>
+            <button class="modal-close-btn" id="aiChatClose"><span id="aiChatCloseIcon"></span></button>
+          </div>
+          <div class="chat-log" id="chatLog"></div>
+          <div class="chat-input-row">
+            <button class="icon-square-btn mic" id="chatMicBtn"><span id="chatMicIcon"></span></button>
+            <input type="text" id="chatInput" class="chat-input" data-i18n-placeholder="chatPlaceholder" placeholder="Type what's going on..." autocomplete="off" />
+            <button class="icon-square-btn" id="chatSendBtn" style="background:var(--accent);color:#fff;border-color:var(--accent);"><span id="chatSendIcon"></span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Nearby Care directory screen ===== -->
+      <div class="care-screen" id="careScreen">
+        <div class="checkout-head">
+          <button class="checkout-back-btn" id="careBackBtn"><span id="careBackIcon"></span></button>
+          <span class="co-title" data-i18n="careTitle">Nearby Care &amp; Pharmacy</span>
+        </div>
+        <div class="care-body" id="careBody"></div>
+      </div>
+
+      <!-- ===== Checkout screen ===== -->
+      <div class="checkout-screen" id="checkoutScreen">
+        <div class="checkout-head">
+          <button class="checkout-back-btn" id="checkoutBackBtn"><span id="checkoutBackIcon"></span></button>
+          <span class="co-title" id="checkoutTitle">Order Review</span>
+          <div class="step-dots" id="stepDots">
+            <div class="step-dot" data-step="0"></div>
+            <div class="step-dot" data-step="1"></div>
+            <div class="step-dot" data-step="2"></div>
+          </div>
+        </div>
+
+        <div class="checkout-body">
+
+          <!-- Step 1: Order review -->
+          <div class="checkout-step active" id="stepReview">
+            <div class="step-scroll">
+              <div id="reviewList"></div>
+              <div class="summary-card">
+                <div class="summary-row"><span data-i18n="subtotal">Subtotal</span><span id="sumSubtotal">$0.00</span></div>
+                <div class="summary-row"><span data-i18n="tax">Estimated Tax</span><span id="sumTax">$0.00</span></div>
+                <div class="summary-row total"><span data-i18n="total">Total</span><span id="sumTotal">$0.00</span></div>
+              </div>
+            </div>
+            <div class="checkout-footer">
+              <button class="primary-btn" id="reviewContinueBtn">
+                <span data-i18n="continueBtn">Continue</span>
+                <span id="reviewContinueIcon"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step: Terms & liability -->
+          <div class="checkout-step" id="stepTerms">
+            <div class="step-scroll">
+              <div class="terms-box">MediVend Health Kiosk — Terms of Use &amp; Liability Waiver
+
+This kiosk dispenses over-the-counter (OTC) products only. It does not provide medical diagnosis, treatment, or professional healthcare advice, and is not a substitute for consulting a licensed pharmacist or physician.
+
+By completing this purchase, you confirm that you have read and understood this product's Drug Facts label — including all warnings, dosage instructions, and allergy information — before use, and that you are responsible for determining whether the item is appropriate for your age, health conditions, allergies, and any other medications you are currently taking.
+
+The kiosk operator, manufacturer, and this application's developer are not liable for any injury, allergic reaction, adverse effect, misuse, incorrect self-diagnosis, or other outcome resulting from the purchase or use of any product dispensed by this machine.
+
+All sales are final. For safety reasons, dispensed medication cannot be returned, exchanged, or refunded.
+
+If you are experiencing a medical emergency, do not use this kiosk. Call 911 or go to the nearest emergency room immediately.
+
+Age-restricted items require valid ID verification at checkout, consistent with state law.
+
+This is a student-built demo kiosk (MediVend Health Kiosk, for NC HOSA Medical Innovations) and is not a certified medical device or a licensed pharmacy dispensing system.</div>
+              <div class="terms-check-row" id="termsCheckRow">
+                <div class="terms-checkbox" id="termsCheckbox"><span id="termsCheckIcon"></span></div>
+                <span class="tc-label" data-i18n="termsAgreeCheckbox">I have read and agree to the terms above</span>
+              </div>
+            </div>
+            <div class="checkout-footer">
+              <button class="primary-btn" id="termsAgreeBtn" disabled>
+                <span data-i18n="termsAgreeBtn">Agree &amp; Continue</span>
+                <span id="termsAgreeIcon"></span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Age verification -->
+          <div class="checkout-step" id="stepVerify">
+            <div class="step-scroll">
+              <div class="verify-panel">
+                <div class="verify-icon" id="verifyIconWrap"><span id="verifyIcon"></span></div>
+                <div class="verify-title" id="verifyTitle" data-i18n="verifyTitle">Age Verification Required</div>
+                <div class="verify-sub" id="verifySub" data-i18n="verifySub">Your order contains an age-restricted item. Please scan a valid government-issued ID to continue.</div>
+                <div class="scan-progress" id="scanProgress"><div class="scan-progress-bar" id="scanProgressBar"></div></div>
+                <div class="verify-demo-note" data-i18n="verifyDemoNote">(Simulated for demo — no real ID scanner connected)</div>
+              </div>
+            </div>
+            <div class="checkout-footer">
+              <button class="primary-btn" id="scanIdBtn">
+                <span id="scanIdIcon"></span>
+                <span data-i18n="scanIdBtn" id="scanIdLabel">Scan ID</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Payment -->
+          <div class="checkout-step" id="stepPay">
+            <div class="step-scroll">
+              <div class="pay-panel">
+                <div class="pay-icon-ring"><span id="payIcon"></span></div>
+                <div class="pay-title" data-i18n="payTitle">Tap, Insert, or Swipe to Pay</div>
+                <div class="pay-sub" id="payAmountLine">Total due: $0.00</div>
+                <div class="pay-methods">
+                  <div class="pay-method-badge"><span id="nfcIcon"></span><span data-i18n="payNfc">Apple / Google Pay</span></div>
+                  <div class="pay-method-badge"><span id="cardIcon2"></span><span data-i18n="payCard">EMV Card</span></div>
+                  <div class="pay-method-badge"><span id="fsaIcon"></span><span data-i18n="payFsa">FSA / HSA</span></div>
+                </div>
+                <div class="pay-processing" id="payProcessing">
+                  <div class="spinner"></div>
+                  <span data-i18n="payProcessingText">Processing payment...</span>
+                </div>
+              </div>
+            </div>
+            <div class="checkout-footer">
+              <button class="primary-btn" id="simulatePayBtn">
+                <span data-i18n="simulatePay">Simulate Payment (Demo)</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ===== Dispense & safety screen ===== -->
+      <div class="dispense-screen" id="dispenseScreen">
+        <div class="dispense-anim working" id="dispenseAnim"><span id="dispenseIcon"></span></div>
+        <div class="dispense-status" id="dispenseStatus" data-i18n="dispensing">Dispensing your order...</div>
+        <div class="dispense-sub" id="dispenseSub"></div>
+
+        <div class="receipt-card" id="receiptCard"></div>
+
+        <div class="safety-card" id="safetyCard">
+          <div class="qr-placeholder"></div>
+          <div>
+            <div class="safety-title" data-i18n="safetyTitle">Usage &amp; Safety Guidelines</div>
+            <div class="safety-sub" data-i18n="safetySub">Scan this code with your phone for full drug facts, dosage instructions, and safety information for your purchase.</div>
+          </div>
+        </div>
+
+        <button class="done-now-btn" id="doneNowBtn" data-i18n="returnHomeNow">Return to Home Now</button>
+        <div class="auto-reset-note" id="autoResetNote">
+          <span id="resetClockIcon"></span>
+          <span id="autoResetText"></span>
+        </div>
+      </div>
+
+      <!-- ===== Emergency full-screen stop ===== -->
+      <div class="emergency-overlay" id="emergencyOverlay">
+        <div class="eicon" id="emergencyIcon"></div>
+        <h1 data-i18n="emergencyTitle">EMERGENCY</h1>
+        <p data-i18n="emergencyText">This machine cannot help with this. Please contact emergency services (911) or go to the nearest hospital immediately.</p>
+        <button class="reset-btn" id="emergencyReset" data-i18n="emergencyReset">Return to Home Screen</button>
+      </div>
+
+      <!-- ===== Code viewer ===== -->
+      <div class="code-overlay" id="codeOverlay">
+        <div class="code-head">
+          <span class="title">Source Code</span>
+          <button class="close-btn" id="codeClose"><span id="codeCloseIcon"></span></button>
+        </div>
+        <div class="code-tabs" id="codeTabs"></div>
+        <pre class="code-body" id="codeBody">Loading source...</pre>
+      </div>
+
+      <!-- ===== Toast ===== -->
+      <div class="toast" id="toast"><span id="toastIcon"></span><span id="toastText"></span></div>
+
+    </div>
+  </div>
+</div>
+
+<script src="icons.js?v=3"></script>
+<script src="products.js?v=5"></script>
+<script src="product-art.js?v=3"></script>
+<script src="ai.js?v=2"></script>
+<script src="med-qa.js?v=6"></script>
+<script src="i18n.js?v=5"></script>
+<script src="kiosk.js?v=8"></script>
+</body>
+</html>
