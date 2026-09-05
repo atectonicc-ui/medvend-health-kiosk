@@ -12,7 +12,7 @@ function setIcon(id, kind) {
 }
 
 [
-  ["headerLogo", "logo"], ["callNurseIcon", "phone"], ["langIcon", "globe"],
+  ["headerLogo", "logo"], ["callNurseIcon", "phone"], ["headerCartIcon", "cart"], ["langIcon", "globe"],
   ["a11yIcon", "access"], ["idleLogo", "logo"], ["searchIcon", "search"],
   ["micIcon", "mic"], ["helperIcon", "help"], ["bannerIcon", "alert"],
   ["cartIcon", "cart"], ["reviewPayArrow", "chevronRight"], ["pdCloseIcon", "close"],
@@ -20,7 +20,12 @@ function setIcon(id, kind) {
   ["checkoutBackIcon", "chevronLeft"], ["reviewContinueIcon", "chevronRight"], ["termsAgreeIcon", "chevronRight"],
   ["verifyIcon", "idCard"], ["scanIdIcon", "idCard"], ["payIcon", "nfc"],
   ["nfcIcon", "nfc"], ["cardIcon2", "card"], ["fsaIcon", "card"],
-  ["resetClockIcon", "clock"], ["emergencyIcon", "alert"], ["codeCloseIcon", "close"],
+  ["resetClockIcon", "clock"], ["emergencyIcon", "alert"],
+  ["judgesToggleIcon", "star"], ["judgesCloseIcon", "close"],
+  ["thermalOverrideIcon", "thermometer"], ["disasterModeIcon", "flame"], ["dispenserJamIcon", "wrench"],
+  ["interactionDemoIcon", "pulse"], ["redFlagIcon", "pulse"], ["interactionIcon", "alert"],
+  ["disasterAlertIcon", "alert"], ["disasterAiIcon", "chat"], ["disasterEmergencyIcon", "pulse"], ["disasterCartIcon", "cart"],
+  ["disasterLangIcon", "globe"], ["disasterA11yIcon", "access"],
   ["toastIcon", "check"], ["dispenseIcon", "pill"],
   ["aabIcon", "chat"], ["aabChevron", "chevronRight"], ["aiChatCloseIcon", "close"],
   ["chatMicIcon", "mic"], ["chatSendIcon", "chevronRight"], ["careBackIcon", "chevronLeft"],
@@ -83,6 +88,54 @@ function showToast(text) {
 const TAX_RATE = 0.07;
 let cart = []; // [{ id, qty }]
 
+// ============================================================
+// Judges-panel demo scenario state
+// ============================================================
+// Liquid/gel items a cabinet over-temperature would chemically degrade.
+const HEAT_SENSITIVE_IDS = ["ointment", "decongestant", "sanitizer", "sunscreen", "coldpack"];
+
+let cabinetOverheated = false; // Thermal Stability Override
+let disasterMode = false; // Disaster Relief Mode
+let simulateDispenserJam = false; // one-shot: consumed by the next dispense
+
+// ---- Disaster Relief Mode: symptom-first triage, zero-cost dispensing, ration engine ----
+// Mapped to the closest real items this catalog actually carries — items
+// like insect repellent or water-purification tablets aren't stocked, so
+// they're intentionally left out rather than inventing products.
+const TRIAGE_GROUPS = [
+  { id: "hydration", labelEn: "Hydration & Heat Exhaustion", labelEs: "Hidratación y Agotamiento por Calor", icon: "drop", max: 2, productIds: ["electrolyte", "coldpack"] },
+  { id: "wound", labelEn: "Wound Care & Trauma", labelEs: "Cuidado de Heridas y Trauma", icon: "bandage", max: 1, productIds: ["bandaid", "gauze", "ointment"] },
+  { id: "burn", labelEn: "Burn & Environmental", labelEs: "Quemaduras y Ambiental", icon: "flame", max: 1, productIds: ["ointment", "sunscreen"] },
+  { id: "fever", labelEn: "Fever & Pain Relief", labelEs: "Fiebre y Alivio del Dolor", icon: "pill", max: 1, productIds: ["acetaminophen", "ibuprofen"] },
+];
+const DISASTER_RATION_MAX_TOTAL = 2; // per "person" (per cooldown cycle)
+const DISASTER_COOLDOWN_SECONDS = 30;
+
+let disasterUiState = "triage"; // "triage" | "items" | "guidance" | "cooldown"
+let disasterActiveGroupId = null;
+let disasterDispensedTotal = 0;
+let disasterCategoryCounts = {}; // groupId -> count dispensed this cycle
+let disasterCooldownInterval = null;
+
+function isTempLocked(product) {
+  return cabinetOverheated && HEAT_SENSITIVE_IDS.includes(product.id);
+}
+// null | "temp" | "stock" — why a product can't be added right now, if at all.
+function unavailableReason(product) {
+  if (isTempLocked(product)) return "temp";
+  if (!product.inStock) return "stock";
+  return null;
+}
+function isAvailable(product) { return unavailableReason(product) === null; }
+
+// If the top match in a result list is unavailable, find the first other
+// match that IS available, so the AI can proactively suggest it instead of
+// just apologizing.
+function findInStockAlternative(products) {
+  if (!products.length || isAvailable(products[0])) return null;
+  return products.find(isAvailable) || null;
+}
+
 function money(n) { return "$" + n.toFixed(2); }
 function findProduct(id) { return PRODUCTS.find((p) => p.id === id); }
 function cartItems() { return cart.map((c) => ({ product: findProduct(c.id), qty: c.qty })).filter((c) => c.product); }
@@ -120,6 +173,10 @@ function updateCartFooter() {
   cartCountLabel.textContent = itemsSelectedLabel(n);
   cartTotalValue.textContent = money(cartSubtotal());
   reviewPayBtn.disabled = n === 0;
+  const headerCartBadge = document.getElementById("headerCartBadge");
+  headerCartBadge.textContent = String(n);
+  headerCartBadge.classList.toggle("hidden", n === 0);
+  updateDisasterCartButton();
 }
 
 // ============================================================
@@ -131,6 +188,7 @@ const productGridEl = document.getElementById("productGrid");
 const noResultsEl = document.getElementById("noResults");
 const searchBannerEl = document.getElementById("searchBanner");
 const bannerTextEl = document.getElementById("bannerText");
+const bannerIconEl = document.getElementById("bannerIcon");
 const searchInput = document.getElementById("searchInput");
 
 let currentCategory = "all";
@@ -166,17 +224,26 @@ function selectCategory(catId) {
 }
 
 function hideBanner() { searchBannerEl.classList.remove("show"); }
-function showBanner(text) { bannerTextEl.textContent = text; searchBannerEl.classList.add("show"); }
+function showBanner(text, variant) {
+  variant = variant || "warn";
+  bannerTextEl.textContent = text;
+  bannerIconEl.innerHTML = iconSvg(variant === "info" ? "chevronRight" : "alert");
+  searchBannerEl.classList.remove("warn", "info");
+  searchBannerEl.classList.add(variant, "show");
+}
 
 function createProductCard(product) {
   const card = document.createElement("div");
   card.className = "product-card";
+  const reason = unavailableReason(product);
 
   const badges = [];
-  if (product.ageRestricted) {
+  if (reason === "temp") {
+    badges.push(`<div class="card-badge templocked">${iconSvg("thermometer")}<span>${t("tempLocked")}</span></div>`);
+  } else if (product.ageRestricted) {
     badges.push(`<div class="card-badge age">${iconSvg("alert")}<span>${t("idRequired")}</span></div>`);
   }
-  if (!product.inStock) {
+  if (reason === "stock") {
     badges.push(`<div class="card-badge oos"><span>${t("outOfStock")}</span></div>`);
   }
 
@@ -196,14 +263,15 @@ function createProductCard(product) {
   card.querySelector(".card-price").textContent = money(product.price);
 
   const stockEl = card.querySelector(".stock-text");
-  if (!product.inStock) { stockEl.textContent = t("outOfStock"); stockEl.classList.add("out"); }
+  if (reason === "temp") { stockEl.textContent = t("tempLocked"); stockEl.classList.add("out"); }
+  else if (reason === "stock") { stockEl.textContent = t("outOfStock"); stockEl.classList.add("out"); }
   else if (product.ageRestricted) { stockEl.textContent = t("idRequired"); stockEl.classList.add("age"); }
   else { stockEl.textContent = t("inStock"); stockEl.classList.add("in"); }
 
   const addBtn = document.createElement("button");
   addBtn.className = "add-btn";
   addBtn.innerHTML = iconSvg("plus") + `<span>${currentLang === "es" ? "Agregar" : "Add"}</span>`;
-  if (!product.inStock) { addBtn.disabled = true; addBtn.querySelector("span").textContent = t("outOfStock"); }
+  if (reason) { addBtn.disabled = true; addBtn.querySelector("span").textContent = reason === "temp" ? t("tempLocked") : t("outOfStock"); }
   addBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     quickAdd(product, addBtn);
@@ -277,6 +345,24 @@ function runSearch(query) {
   }
   if (result.type === "unclear") {
     renderGrid([]);
+    return;
+  }
+
+  // Top match unavailable (out of stock or temp-locked)? Lead with a safe,
+  // available alternative instead of just showing a dead end.
+  const alt = findInStockAlternative(result.products);
+  if (alt) {
+    const primary = result.products[0];
+    const reasonText = unavailableReason(primary) === "temp"
+      ? (currentLang === "es" ? "está bloqueado temporalmente por temperatura" : "is temporarily temperature-locked")
+      : (currentLang === "es" ? "está agotado" : "is out of stock");
+    showBanner(
+      currentLang === "es"
+        ? `${primary.name} ${reasonText} ahora mismo — mostrando ${alt.name} como alternativa segura.`
+        : `${primary.name} ${reasonText} right now — showing ${alt.name} as a safe alternative.`,
+      "info"
+    );
+    renderGrid([alt, ...result.products.filter((p) => p !== alt)]);
     return;
   }
   renderGrid(result.products);
@@ -453,6 +539,27 @@ function handleChatSend(raw) {
       addNearbyCareCard();
       return;
     }
+    // Top match unavailable (out of stock or temp-locked)? Suggest a safe,
+    // available alternative explicitly rather than just showing it dead.
+    const alt = findInStockAlternative(result.products);
+    if (alt) {
+      const primary = result.products[0];
+      const reasonText = unavailableReason(primary) === "temp"
+        ? (currentLang === "es" ? "está bloqueado temporalmente por temperatura" : "is temporarily temperature-locked")
+        : (currentLang === "es" ? "está agotado" : "is out of stock");
+      const ingredientNote = alt.activeIngredient
+        ? (currentLang === "es" ? ` (ingrediente activo: ${alt.activeIngredient})` : ` (active ingredient: ${alt.activeIngredient})`)
+        : "";
+      addChatMessage(
+        currentLang === "es"
+          ? `${primary.name} ${reasonText} ahora mismo. Una alternativa segura: ${alt.name}${ingredientNote}.`
+          : `${primary.name} ${reasonText} right now. A safe alternative: ${alt.name}${ingredientNote}.`,
+        "warn"
+      );
+      addChatProductCards([alt, ...result.products.filter((p) => p !== alt)]);
+      return;
+    }
+
     addChatMessage(friendlyIntro(result.products), "ai");
     addChatProductCards(result.products);
   }, 450);
@@ -648,8 +755,43 @@ function needsAgeVerification() {
   return cartItems().some((c) => c.product.ageRestricted);
 }
 
+// Known-risk combinations, detected generically by shared active-ingredient
+// class rather than a hardcoded product-pair list, so it also catches
+// unnamed future items (e.g. any two items both containing acetaminophen).
+function checkCartInteractions() {
+  const items = cartItems().map((c) => c.product);
+  const es = currentLang === "es";
+  const nsaid = items.filter((p) => p.activeIngredient && p.activeIngredient.includes("NSAID"));
+  const acet = items.filter((p) => p.activeIngredient && p.activeIngredient.includes("Acetaminophen"));
+  const warnings = [];
+  if (nsaid.length >= 2) {
+    warnings.push({
+      names: nsaid.map((p) => p.name),
+      title: es ? "Riesgo de Sangrado Estomacal" : "Stomach Bleeding Risk",
+      detail: es
+        ? "Combinar varios AINE (como ibuprofeno y aspirina) aumenta el riesgo de sangrado estomacal."
+        : "Combining multiple NSAIDs (like ibuprofen and aspirin) increases the risk of stomach bleeding.",
+    });
+  }
+  if (acet.length >= 2) {
+    warnings.push({
+      names: acet.map((p) => p.name),
+      title: es ? "Riesgo de Daño Hepático" : "Liver Damage Risk",
+      detail: es
+        ? "Estos artículos contienen acetaminofén — tomarlos juntos puede exceder el límite diario seguro y causar daño hepático."
+        : "These items both contain acetaminophen — taking them together can exceed the safe daily limit and cause liver damage.",
+    });
+  }
+  return warnings;
+}
+
 function computeActiveSteps() {
-  return needsAgeVerification() ? ["review", "terms", "verify", "pay"] : ["review", "terms", "pay"];
+  const steps = [];
+  if (checkCartInteractions().length) steps.push("interaction");
+  steps.push("review", "terms");
+  if (needsAgeVerification()) steps.push("verify");
+  steps.push("pay");
+  return steps;
 }
 
 function openCheckout() {
@@ -665,7 +807,7 @@ function openCheckout() {
 
 function closeCheckout() { checkoutScreen.classList.remove("show"); }
 
-const stepTitleKey = { review: "orderReview", terms: "termsTitle", verify: "ageVerification", pay: "payment" };
+const stepTitleKey = { interaction: "interactionStepTitle", review: "orderReview", terms: "termsTitle", verify: "ageVerification", pay: "payment" };
 
 function renderCheckoutStep() {
   document.querySelectorAll(".checkout-step").forEach((el) => el.classList.remove("active"));
@@ -680,10 +822,27 @@ function renderCheckoutStep() {
     stepDotsEl.appendChild(dot);
   });
 
+  if (stepName === "interaction") renderInteractionStep();
   if (stepName === "terms") resetTermsStep();
   if (stepName === "verify") resetVerifyStep();
   if (stepName === "pay") resetPayStep();
 }
+
+function renderInteractionStep() {
+  const list = document.getElementById("interactionList");
+  list.innerHTML = checkCartInteractions().map((w) => `
+    <div class="interaction-card">
+      <div class="ic-title">${w.title}</div>
+      <div class="ic-items">${w.names.join(" + ")}</div>
+      <div class="ic-detail">${w.detail}</div>
+    </div>
+  `).join("");
+}
+document.getElementById("interactionBackBtn").addEventListener("click", closeCheckout);
+document.getElementById("interactionContinueBtn").addEventListener("click", () => {
+  stepIndex++;
+  renderCheckoutStep();
+});
 
 document.getElementById("checkoutBackBtn").addEventListener("click", () => {
   if (stepIndex === 0) { closeCheckout(); return; }
@@ -829,6 +988,10 @@ simulatePayBtn.addEventListener("click", () => {
 });
 
 reviewPayBtn.addEventListener("click", openCheckout);
+document.getElementById("headerCartBtn").addEventListener("click", () => {
+  if (cartCount() > 0) openCheckout();
+  else showToast(currentLang === "es" ? "Su carrito está vacío" : "Your cart is empty");
+});
 
 // ============================================================
 // Dispense & safety screen
@@ -847,6 +1010,9 @@ const autoResetText = document.getElementById("autoResetText");
 let resetCountdownInterval = null;
 
 function startDispense() {
+  const jam = simulateDispenserJam;
+  simulateDispenserJam = false; // one-shot, consumed now regardless of outcome
+
   const items = cartItems();
   const orderSnapshot = items.map((i) => ({ name: i.product.name, qty: i.qty, price: i.product.price }));
   const orderTotal = cartSubtotal() * (1 + TAX_RATE);
@@ -855,10 +1021,20 @@ function startDispense() {
   safetyCard.classList.remove("show");
   doneNowBtn.classList.remove("show");
   autoResetNote.classList.remove("show");
+  dispenseAnim.classList.remove("failed");
   dispenseAnim.classList.add("working");
   dispenseAnim.innerHTML = iconSvg("pill");
   dispenseStatus.textContent = t("dispensing");
+  dispenseSub.textContent = "";
   dispenseScreen.classList.add("show");
+
+  if (jam) {
+    // Hardware fails before anything physically drops — nothing dispensed,
+    // charge reversed, cart preserved isn't needed since the transaction
+    // itself is voided.
+    setTimeout(() => failDispense(), 1400);
+    return;
+  }
 
   let idx = 0;
   function nextItem() {
@@ -874,6 +1050,23 @@ function startDispense() {
     setTimeout(nextItem, 1100);
   }
   nextItem();
+}
+
+function failDispense() {
+  dispenseAnim.classList.remove("working");
+  dispenseAnim.classList.add("failed");
+  dispenseAnim.innerHTML = iconSvg("alert");
+  dispenseStatus.textContent = t("dispenseFailTitle");
+  dispenseSub.textContent = t("dispenseFailSub");
+
+  receiptCard.innerHTML = `<div class="receipt-row"><span>${t("receiptReversed")}</span><span>$0.00</span></div>`;
+  receiptCard.classList.add("show");
+  doneNowBtn.classList.add("show");
+
+  cart = [];
+  updateCartFooter();
+
+  startResetCountdown(20);
 }
 
 function finishDispense(orderSnapshot, orderTotal) {
@@ -919,7 +1112,16 @@ doneNowBtn.addEventListener("click", () => { clearInterval(resetCountdownInterva
 // ============================================================
 
 const emergencyOverlay = document.getElementById("emergencyOverlay");
-function triggerEmergency() { emergencyOverlay.classList.add("show"); }
+function triggerEmergency() {
+  const erListEl = document.getElementById("emergencyErList");
+  erListEl.innerHTML = FACILITIES.er.map((f) => `
+    <div class="emergency-er-card">
+      <div class="er-name">${f.name}</div>
+      <div class="er-detail">${f.address} · ${f.phone}${f.open24 ? " · " + t("careOpen24") : ""}</div>
+    </div>
+  `).join("");
+  emergencyOverlay.classList.add("show");
+}
 document.getElementById("emergencyReset").addEventListener("click", () => {
   emergencyOverlay.classList.remove("show");
   resetKiosk();
@@ -1009,19 +1211,27 @@ function resetKiosk() {
 const langDropdown = document.getElementById("langDropdown");
 const a11yDropdown = document.getElementById("a11yDropdown");
 
-document.getElementById("langBtn").addEventListener("click", (e) => {
+function toggleLangDropdown(e) {
   e.stopPropagation();
   a11yDropdown.classList.remove("show");
   langDropdown.classList.toggle("show");
-});
-document.getElementById("a11yBtn").addEventListener("click", (e) => {
+}
+function toggleA11yDropdown(e) {
   e.stopPropagation();
   langDropdown.classList.remove("show");
   a11yDropdown.classList.toggle("show");
-});
+}
+document.getElementById("langBtn").addEventListener("click", toggleLangDropdown);
+document.getElementById("a11yBtn").addEventListener("click", toggleA11yDropdown);
+// Disaster Relief Mode is a full-screen takeover that covers the normal
+// header (and its lang/a11y buttons), so it gets its own pair of buttons
+// wired to the exact same dropdowns rather than a duplicate settings UI.
+document.getElementById("disasterLangBtn").addEventListener("click", toggleLangDropdown);
+document.getElementById("disasterA11yBtn").addEventListener("click", toggleA11yDropdown);
+const DROPDOWN_OPEN_IDS = new Set(["langBtn", "a11yBtn", "disasterLangBtn", "disasterA11yBtn"]);
 kiosk.addEventListener("pointerdown", (e) => {
-  if (!langDropdown.contains(e.target) && e.target.id !== "langBtn") langDropdown.classList.remove("show");
-  if (!a11yDropdown.contains(e.target) && e.target.id !== "a11yBtn") a11yDropdown.classList.remove("show");
+  if (!langDropdown.contains(e.target) && !DROPDOWN_OPEN_IDS.has(e.target.id)) langDropdown.classList.remove("show");
+  if (!a11yDropdown.contains(e.target) && !DROPDOWN_OPEN_IDS.has(e.target.id)) a11yDropdown.classList.remove("show");
 });
 
 document.getElementById("langEnBtn").addEventListener("click", () => setLanguage("en"));
@@ -1030,6 +1240,7 @@ document.getElementById("langEsBtn").addEventListener("click", () => setLanguage
 function setLanguage(lang) {
   currentLang = lang;
   document.getElementById("langCode").textContent = lang.toUpperCase();
+  document.getElementById("disasterLangCode").textContent = lang.toUpperCase();
   document.getElementById("langEnBtn").classList.toggle("active", lang === "en");
   document.getElementById("langEsBtn").classList.toggle("active", lang === "es");
 
@@ -1038,7 +1249,10 @@ function setLanguage(lang) {
 
   renderFilterBar();
   updateCartFooter();
+  renderScenarioBanners();
   if (careScreen.classList.contains("show")) renderCareScreen();
+  if (judgesOverlay.classList.contains("show")) { renderJudgesStockList(); updateJudgesToggleButtons(); }
+  if (disasterMode) renderDisasterScreen();
   if (lastMode.type === "search") runSearch(lastMode.value);
   else selectCategory(lastMode.value);
 }
@@ -1052,65 +1266,385 @@ function wireToggle(btnId, onChange) {
     onChange(on);
   });
 }
-wireToggle("largeTextToggle", (on) => kiosk.classList.toggle("a11y-large", on));
+wireToggle("largeTextToggle", (on) => {
+  kiosk.classList.toggle("a11y-large", on);
+  // `rem` is always relative to <html>, not to .kiosk, so the class has to
+  // land on the real root too or every rem-sized font-size in the app
+  // (including the disaster screen) silently ignores this toggle.
+  document.documentElement.classList.toggle("a11y-large", on);
+});
 wireToggle("highContrastToggle", (on) => kiosk.classList.toggle("high-contrast", on));
 wireToggle("darkModeToggle", (on) => { kiosk.dataset.theme = on ? "dark" : "light"; });
 
 // ============================================================
-// Code viewer
+// Judges panel — quick demo controls for presenting the kiosk live
+// (simulate real-world scenarios, flip any item's stock on the fly)
+// rather than exposing raw source. Directly mutates PRODUCTS' inStock
+// flags and re-renders whatever view is currently open.
 // ============================================================
 
-const codeToggle = document.getElementById("codeToggle");
-const codeOverlay = document.getElementById("codeOverlay");
-const codeTabsEl = document.getElementById("codeTabs");
-const codeBodyEl = document.getElementById("codeBody");
-const SOURCE_FILES = ["index.html", "style.css", "icons.js", "products.js", "product-art.js", "ai.js", "med-qa.js", "i18n.js", "kiosk.js"];
-let sourceCache = null;
-let activeFile = SOURCE_FILES[0];
+const judgesOverlay = document.getElementById("judgesOverlay");
+const judgesStockListEl = document.getElementById("judgesStockList");
 
-async function loadSource() {
-  if (sourceCache) return sourceCache;
-  // When bundled as a single-file artifact there's no server to fetch
-  // sibling files from, so the bundler embeds the original source texts
-  // as SOURCE_CONTENTS ahead of this script. Local dev (served over
-  // http.server, one file per <script src>) doesn't define that global,
-  // so it falls through to the fetch-based path below.
-  if (typeof SOURCE_CONTENTS !== "undefined") {
-    sourceCache = SOURCE_CONTENTS;
-    return sourceCache;
-  }
-  const entries = await Promise.all(
-    SOURCE_FILES.map(async (name) => {
-      try {
-        const res = await fetch(name, { cache: "no-store" });
-        return [name, await res.text()];
-      } catch (err) {
-        return [name, "// Could not load " + name + " (" + err + ")"];
-      }
-    })
-  );
-  sourceCache = Object.fromEntries(entries);
-  return sourceCache;
+function refreshCurrentView() {
+  if (lastMode.type === "search") runSearch(lastMode.value);
+  else selectCategory(lastMode.value);
 }
-function renderCodeTabs() {
-  codeTabsEl.innerHTML = "";
-  SOURCE_FILES.forEach((name) => {
-    const btn = document.createElement("button");
-    btn.textContent = name;
-    if (name === activeFile) btn.classList.add("active");
-    btn.addEventListener("click", () => { activeFile = name; renderCodeTabs(); renderCodeBody(); });
-    codeTabsEl.appendChild(btn);
+
+function setProductStock(id, inStock) {
+  const p = findProduct(id);
+  if (!p || p.inStock === inStock) return;
+  p.inStock = inStock;
+  renderJudgesStockList();
+  refreshCurrentView();
+}
+
+function renderJudgesStockList() {
+  judgesStockListEl.innerHTML = "";
+  PRODUCTS.forEach((p) => {
+    const row = document.createElement("div");
+    row.className = "judges-row";
+    row.innerHTML = `
+      <div class="jr-icon">${iconSvg(p.icon)}</div>
+      <div class="jr-name"></div>
+      <span class="jr-status"></span>
+      <button class="jr-toggle"></button>
+    `;
+    row.querySelector(".jr-name").textContent = p.name;
+    const statusEl = row.querySelector(".jr-status");
+    const locked = isTempLocked(p);
+    if (locked) { statusEl.textContent = t("tempLocked"); statusEl.classList.add("out"); }
+    else { statusEl.textContent = p.inStock ? t("inStock") : t("outOfStock"); statusEl.classList.add(p.inStock ? "in" : "out"); }
+    const btn = row.querySelector(".jr-toggle");
+    if (locked) {
+      btn.textContent = currentLang === "es" ? "Bloqueado" : "Locked";
+      btn.disabled = true;
+    } else {
+      btn.textContent = p.inStock
+        ? (currentLang === "es" ? "Agotar" : "Mark Out")
+        : (currentLang === "es" ? "Reponer" : "Mark In");
+      btn.addEventListener("click", () => setProductStock(p.id, !p.inStock));
+    }
+    judgesStockListEl.appendChild(row);
   });
 }
-function renderCodeBody() { codeBodyEl.textContent = sourceCache ? sourceCache[activeFile] : "Loading..."; }
-codeToggle.addEventListener("click", async () => {
-  codeOverlay.classList.add("show");
-  renderCodeTabs();
-  renderCodeBody();
-  await loadSource();
-  renderCodeBody();
-});
-document.getElementById("codeClose").addEventListener("click", () => codeOverlay.classList.remove("show"));
+
+// ---- Scenario 1: Thermal Stability Override ----
+
+function renderScenarioBanners() {
+  const el = document.getElementById("scenarioBanners");
+  const banners = [];
+  if (cabinetOverheated) {
+    banners.push(`
+      <div class="scenario-banner temp">
+        ${iconSvg("thermometer")}
+        <span class="sb-text">${t("thermalBannerText")}</span>
+        <button id="resolveThermalBtn">${currentLang === "es" ? "Resolver" : "Resolve"}</button>
+      </div>
+    `);
+  }
+  el.innerHTML = banners.join("");
+  const resolveThermal = document.getElementById("resolveThermalBtn");
+  if (resolveThermal) resolveThermal.addEventListener("click", toggleThermalOverride);
+}
+
+function updateJudgesToggleButtons() {
+  const thermalLabel = document.getElementById("thermalOverrideLabel");
+  thermalLabel.textContent = cabinetOverheated
+    ? (currentLang === "es" ? "Borrar Bloqueo Térmico" : "Clear Thermal Lockout")
+    : (currentLang === "es" ? "Activar Bloqueo Térmico" : "Trigger Thermal Stability Override");
+  document.getElementById("thermalOverrideBtn").classList.toggle("active-state", cabinetOverheated);
+
+  const disasterLabel = document.getElementById("disasterModeLabel");
+  disasterLabel.textContent = disasterMode
+    ? (currentLang === "es" ? "Salir del Modo de Desastre" : "Exit Disaster Relief Mode")
+    : (currentLang === "es" ? "Activar Modo de Desastre" : "Activate Disaster Relief Mode");
+  document.getElementById("disasterModeBtn").classList.toggle("active-state", disasterMode);
+
+  const jamLabel = document.getElementById("dispenserJamLabel");
+  jamLabel.textContent = simulateDispenserJam
+    ? (currentLang === "es" ? "Atasco Armado — Listo" : "Jam Armed — Ready")
+    : (currentLang === "es" ? "Armar Atasco del Dispensador (Próximo Pedido)" : "Arm Dispenser Jam (Next Order)");
+  document.getElementById("dispenserJamBtn").classList.toggle("active-state", simulateDispenserJam);
+}
+
+function toggleThermalOverride() {
+  cabinetOverheated = !cabinetOverheated;
+  updateJudgesToggleButtons();
+  renderScenarioBanners();
+  refreshCurrentView();
+  if (cabinetOverheated) showToast(currentLang === "es" ? "🌡️ Anulación de estabilidad térmica activada" : "🌡️ Thermal stability override triggered");
+}
+
+// ---- Disaster Relief Mode: full-screen off-grid triage terminal ----
+
+function toggleDisasterMode() {
+  disasterMode = !disasterMode;
+  updateJudgesToggleButtons();
+  if (disasterMode) {
+    closeJudgesPanel();
+    disasterUiState = "triage";
+    disasterActiveGroupId = null;
+    disasterDispensedTotal = 0;
+    disasterCategoryCounts = {};
+    clearInterval(disasterCooldownInterval);
+    renderDisasterScreen();
+    document.getElementById("disasterScreen").classList.add("show");
+  } else {
+    clearInterval(disasterCooldownInterval);
+    document.getElementById("disasterScreen").classList.remove("show");
+  }
+}
+
+function disasterGroupCount(groupId) { return disasterCategoryCounts[groupId] || 0; }
+
+// Everything NOT designated an emergency-triage item stays available in
+// Disaster Relief Mode too — just at normal price, through the regular
+// cart/checkout, not the free rationed dispense path.
+function disasterEmergencyIds() { return new Set(TRIAGE_GROUPS.flatMap((g) => g.productIds)); }
+function disasterOtherProducts() {
+  const emergencyIds = disasterEmergencyIds();
+  return PRODUCTS.filter((p) => !emergencyIds.has(p.id));
+}
+
+function updateDisasterCartButton() {
+  const btn = document.getElementById("disasterCartBtn");
+  const label = document.getElementById("disasterCartLabel");
+  const n = cartCount();
+  label.textContent = `${currentLang === "es" ? "Carrito" : "Cart"} (${n})${n ? " · " + money(cartSubtotal()) : ""}`;
+  btn.disabled = n === 0;
+}
+
+function renderDisasterScreen() {
+  if (disasterUiState === "triage") renderDisasterTriage();
+  else if (disasterUiState === "items") renderDisasterItems(disasterActiveGroupId);
+  // "guidance" and "cooldown" states render themselves directly when entered.
+}
+
+function renderDisasterTriage() {
+  disasterUiState = "triage";
+  const es = currentLang === "es";
+  const body = document.getElementById("disasterBody");
+  const atTotalCap = disasterDispensedTotal >= DISASTER_RATION_MAX_TOTAL;
+  const tiles = TRIAGE_GROUPS.map((g) => {
+    const used = disasterGroupCount(g.id);
+    const groupFull = used >= g.max || atTotalCap;
+    return `
+      <div class="disaster-tile${groupFull ? " disabled" : ""}" data-group="${g.id}">
+        <div class="dt-icon">${iconSvg(g.icon)}</div>
+        <div class="dt-label">${es ? g.labelEs : g.labelEn}</div>
+        <div class="dt-ration">${es ? "Ración" : "Ration"}: ${used}/${g.max}</div>
+      </div>
+    `;
+  }).join("");
+  body.innerHTML = `
+    <div class="disaster-triage-wrap">
+      <div class="disaster-triage-grid">${tiles}</div>
+      <div class="disaster-tile other" data-group="other">
+        <div class="dt-icon">${iconSvg("shield")}</div>
+        <div class="dt-label">${es ? "Otros Suministros" : "Other Supplies"}</div>
+        <div class="dt-ration">${es ? "Precio normal · sin ración" : "Standard price · not rationed"}</div>
+      </div>
+    </div>
+  `;
+  body.querySelectorAll(".disaster-tile").forEach((tile) => {
+    tile.addEventListener("click", () => {
+      disasterActiveGroupId = tile.dataset.group;
+      renderDisasterItems(disasterActiveGroupId);
+    });
+  });
+  updateDisasterCartButton();
+}
+
+function renderDisasterItems(groupId) {
+  disasterUiState = "items";
+  disasterActiveGroupId = groupId;
+  const body = document.getElementById("disasterBody");
+  const es = currentLang === "es";
+
+  if (groupId === "other") {
+    const items = disasterOtherProducts();
+    body.innerHTML = `
+      <div class="disaster-item-header">
+        <button class="disaster-back-btn" id="disasterItemsBack">${iconSvg("chevronLeft")}</button>
+        <div class="disaster-item-title">${es ? "Otros Suministros (Precio Normal)" : "Other Supplies (Standard Price)"}</div>
+      </div>
+      ${items.map((p) => `
+        <div class="disaster-item-card standard">
+          <div class="di-icon standard">${iconSvg(p.icon)}</div>
+          <div class="di-info">
+            <div class="di-name standard">${p.name}</div>
+            <div class="di-price standard">${money(p.price)}</div>
+          </div>
+          <button class="di-dispense-btn standard" data-id="${p.id}" ${!p.inStock ? "disabled" : ""}>
+            ${!p.inStock ? t("outOfStock") : (es ? "Agregar" : "Add to Cart")}
+          </button>
+        </div>
+      `).join("")}
+    `;
+    document.getElementById("disasterItemsBack").addEventListener("click", renderDisasterTriage);
+    body.querySelectorAll(".di-dispense-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const p = findProduct(btn.dataset.id);
+        addToCart(p, 1);
+        showToast(`${p.name} ${es ? "agregado a su pedido" : "added to your order"}`);
+        updateDisasterCartButton();
+      });
+    });
+    return;
+  }
+
+  const group = TRIAGE_GROUPS.find((g) => g.id === groupId);
+  const atTotalCap = disasterDispensedTotal >= DISASTER_RATION_MAX_TOTAL;
+  const groupFull = disasterGroupCount(groupId) >= group.max;
+  const items = group.productIds.map(findProduct).filter(Boolean);
+
+  body.innerHTML = `
+    <div class="disaster-item-header">
+      <button class="disaster-back-btn" id="disasterItemsBack">${iconSvg("chevronLeft")}</button>
+      <div class="disaster-item-title">${es ? group.labelEs : group.labelEn}</div>
+    </div>
+    ${items.map((p) => `
+      <div class="disaster-item-card">
+        <div class="di-icon">${iconSvg(p.icon)}</div>
+        <div class="di-info">
+          <div class="di-name">${p.name}</div>
+          <div class="di-price">$0.00 — ${es ? "Crédito de Emergencia" : "Emergency Relief Credit"}</div>
+        </div>
+        <button class="di-dispense-btn" data-id="${p.id}" ${(atTotalCap || groupFull || !p.inStock) ? "disabled" : ""}>
+          ${!p.inStock ? t("outOfStock") : (es ? "Entregar Ahora" : "Dispense Now")}
+        </button>
+      </div>
+    `).join("")}
+  `;
+  document.getElementById("disasterItemsBack").addEventListener("click", renderDisasterTriage);
+  body.querySelectorAll(".di-dispense-btn").forEach((btn) => {
+    btn.addEventListener("click", () => dispenseDisasterItem(findProduct(btn.dataset.id), group));
+  });
+}
+
+function dispenseDisasterItem(product, group) {
+  disasterDispensedTotal++;
+  disasterCategoryCounts[group.id] = disasterGroupCount(group.id) + 1;
+  renderDisasterGuidance(product);
+}
+
+function buildEmergencyGuidance(product) {
+  const es = currentLang === "es";
+  const parts = [product.instructions];
+  if (product.warnings) parts.push(product.warnings);
+  const closing = es
+    ? "Si la persona está confundida, con dolor severo o inconsciente, busque refugio médico de inmediato."
+    : "If the person is confused, in severe pain, or unconscious, seek immediate medical shelter.";
+  return parts.join(" ") + " " + closing;
+}
+
+function renderDisasterGuidance(product) {
+  disasterUiState = "guidance";
+  const es = currentLang === "es";
+  const body = document.getElementById("disasterBody");
+  body.innerHTML = `
+    <div class="disaster-guidance">
+      <div class="dg-icon">${iconSvg("check")}</div>
+      <div class="dg-title">${es ? "ENTREGANDO" : "DISPENSING"}: ${product.name}</div>
+      <div class="dg-text">${es ? "Guía de Emergencia" : "Emergency Guidance"}: ${buildEmergencyGuidance(product)}</div>
+      <div class="dg-qr-row">
+        <div class="qr-placeholder"></div>
+        <div class="dg-qr-text">${es
+          ? "Escanee para guardar las pautas de tratamiento sin conexión en su teléfono — no requiere datos móviles."
+          : "Scan to save these offline treatment guidelines to your phone — no cell data required."}</div>
+      </div>
+    </div>
+  `;
+  setTimeout(() => startDisasterCooldown(), 3000);
+}
+
+function startDisasterCooldown() {
+  disasterUiState = "cooldown";
+  let remaining = DISASTER_COOLDOWN_SECONDS;
+  const render = () => {
+    const es = currentLang === "es";
+    document.getElementById("disasterBody").innerHTML = `
+      <div class="disaster-cooldown">
+        <div class="dc-icon">${iconSvg("clock")}</div>
+        <div class="dc-title">${es ? "Reinicio de Seguridad" : "Safety Reset"}</div>
+        <div class="dc-count">${remaining}s</div>
+        <div class="dc-sub">${es
+          ? `Permita que otros accedan a los suministros de emergencia. Próxima transacción disponible en ${remaining}s.`
+          : `Please allow others access to emergency supplies. Next transaction available in ${remaining}s.`}</div>
+      </div>
+    `;
+  };
+  render();
+  clearInterval(disasterCooldownInterval);
+  disasterCooldownInterval = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(disasterCooldownInterval);
+      disasterDispensedTotal = 0;
+      disasterCategoryCounts = {};
+      renderDisasterTriage();
+      return;
+    }
+    render();
+  }, 1000);
+}
+
+document.getElementById("disasterAiBtn").addEventListener("click", openAiChat);
+document.getElementById("disasterEmergencyBtn").addEventListener("click", triggerEmergency);
+document.getElementById("disasterExitBtn").addEventListener("click", toggleDisasterMode);
+document.getElementById("disasterCartBtn").addEventListener("click", () => { if (cartCount() > 0) openCheckout(); });
+
+function armDispenserJam() {
+  simulateDispenserJam = true;
+  updateJudgesToggleButtons();
+  showToast(currentLang === "es" ? "🔧 Atasco del dispensador armado para el próximo pedido" : "🔧 Dispenser jam armed for the next order");
+}
+
+function simulateInteractionDemo() {
+  addToCart(findProduct("aspirin"), 1);
+  addToCart(findProduct("ibuprofen"), 1);
+  closeJudgesPanel();
+  openCheckout();
+}
+
+function triggerRedFlagDemo() {
+  closeJudgesPanel();
+  const query = "chest pain and left arm numbness";
+  searchInput.value = query;
+  runSearch(query);
+}
+
+function resetAllScenarios() {
+  PRODUCTS.forEach((p) => { p.inStock = true; });
+  cabinetOverheated = false;
+  simulateDispenserJam = false;
+  if (disasterMode) {
+    disasterMode = false;
+    clearInterval(disasterCooldownInterval);
+    document.getElementById("disasterScreen").classList.remove("show");
+  }
+  renderJudgesStockList();
+  updateJudgesToggleButtons();
+  renderScenarioBanners();
+  refreshCurrentView();
+  showToast(currentLang === "es" ? "Todos los escenarios de demostración restablecidos" : "All demo scenarios reset");
+}
+
+function openJudgesPanel() {
+  renderJudgesStockList();
+  updateJudgesToggleButtons();
+  judgesOverlay.classList.add("show");
+}
+function closeJudgesPanel() { judgesOverlay.classList.remove("show"); }
+document.getElementById("judgesToggle").addEventListener("click", openJudgesPanel);
+document.getElementById("judgesClose").addEventListener("click", closeJudgesPanel);
+document.getElementById("thermalOverrideBtn").addEventListener("click", toggleThermalOverride);
+document.getElementById("disasterModeBtn").addEventListener("click", toggleDisasterMode);
+document.getElementById("dispenserJamBtn").addEventListener("click", armDispenserJam);
+document.getElementById("interactionDemoBtn").addEventListener("click", simulateInteractionDemo);
+document.getElementById("redFlagBtn").addEventListener("click", triggerRedFlagDemo);
+document.getElementById("resetAllScenariosBtn").addEventListener("click", resetAllScenarios);
 
 // ============================================================
 // Init

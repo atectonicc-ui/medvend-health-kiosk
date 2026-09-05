@@ -33,6 +33,11 @@ const ICONS = {
   minus: '<path d="M5 12h14"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   chat: '<path d="M4 4h16v12H8l-4 4V4Z"/><path d="M8 9h8"/><path d="M8 12.5h5"/>',
+  star: '<path d="m12 3 2.6 5.6 6.1.6-4.6 4.2 1.3 6-5.4-3.2-5.4 3.2 1.3-6-4.6-4.2 6.1-.6Z"/>',
+  flame: '<path d="M12 2c1 3-3 4.5-3 8a3 3 0 0 0 6 0c1 1.2 1.5 2.6 1.5 4a4.5 4.5 0 0 1-9 0C7.5 9.5 10 7 12 2Z"/>',
+  thermometer: '<path d="M12 14.5V4.5a2 2 0 1 0-4 0v10a4 4 0 1 0 4 0Z"/><path d="M10 8h3"/>',
+  wrench: '<path d="M14.7 3.3a4 4 0 0 0-5.3 4.9L3 14.5 5.5 17l6.3-6.4a4 4 0 0 0 4.9-5.3l-2.5 2.5-2-2Z"/>',
+  pulse: '<path d="M3 12h4l2-8 4 16 2-8h6"/>',
   building: '<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 21v-4h6v4"/><path d="M9 7h.01"/><path d="M15 7h.01"/><path d="M9 11h.01"/><path d="M15 11h.01"/>',
   pin: '<path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12Z"/><circle cx="12" cy="9" r="2.5"/>',
 };

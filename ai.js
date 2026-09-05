@@ -49,8 +49,13 @@ function classify(text) {
 }
 
 function friendlyIntro(products) {
+  const es = currentLang === "es";
   if (products.length === 1) {
-    return `Here's something that should help: ${products[0].name}.`;
+    return es
+      ? `Esto debería ayudar: ${products[0].name}.`
+      : `Here's something that should help: ${products[0].name}.`;
   }
-  return `A couple of options that should help: ${products.map((p) => p.name).join(", ")}.`;
+  return es
+    ? `Un par de opciones que deberían ayudar: ${products.map((p) => p.name).join(", ")}.`
+    : `A couple of options that should help: ${products.map((p) => p.name).join(", ")}.`;
 }

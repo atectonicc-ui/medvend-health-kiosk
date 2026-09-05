@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>MediVend Health Kiosk</title>
-<link rel="stylesheet" href="style.css?v=8" />
+<link rel="stylesheet" href="style.css?v=15" />
 </head>
 <body>
 
@@ -31,42 +31,51 @@
         </div>
 
         <div class="header-right">
+          <button class="header-icon-btn header-cart-btn" id="headerCartBtn">
+            <span id="headerCartIcon"></span>
+            <span class="header-cart-badge hidden" id="headerCartBadge">0</span>
+          </button>
           <button class="header-icon-btn" id="langBtn"><span id="langIcon"></span><span id="langCode">EN</span></button>
           <button class="header-icon-btn" id="a11yBtn"><span id="a11yIcon"></span></button>
-          <button class="code-btn" id="codeToggle">&lt;/&gt; code</button>
+          <button class="judges-btn" id="judgesToggle"><span id="judgesToggleIcon"></span><span data-i18n="judgesBtnLabel">Judges</span></button>
+        </div>
+      </div>
 
-          <div class="header-dropdown" id="langDropdown">
-            <div class="dd-title" data-i18n="ddLanguage">Language</div>
-            <div class="lang-choice-row">
-              <button class="lang-btn active" id="langEnBtn">English</button>
-              <button class="lang-btn" id="langEsBtn">Español</button>
-            </div>
-          </div>
+      <!-- Language/Accessibility dropdowns live as direct children of .kiosk
+           (not nested in the header) so their z-index isn't trapped inside
+           .kiosk-header's own stacking context (it sets z-index:20) — that
+           trapping is what silently made them unopenable while Disaster
+           Relief Mode's full-screen overlay (z-index:45) was showing. -->
+      <div class="header-dropdown" id="langDropdown">
+        <div class="dd-title" data-i18n="ddLanguage">Language</div>
+        <div class="lang-choice-row">
+          <button class="lang-btn active" id="langEnBtn">English</button>
+          <button class="lang-btn" id="langEsBtn">Español</button>
+        </div>
+      </div>
 
-          <div class="header-dropdown" id="a11yDropdown">
-            <div class="dd-title" data-i18n="ddAccessibility">Accessibility</div>
-            <div class="dd-option-row">
-              <div>
-                <div class="dd-label" data-i18n="ddLargeText">Larger Text</div>
-                <div class="dd-sub" data-i18n="ddLargeTextSub">Increase text size kiosk-wide</div>
-              </div>
-              <div class="toggle-switch" id="largeTextToggle"><div class="knob"></div></div>
-            </div>
-            <div class="dd-option-row">
-              <div>
-                <div class="dd-label" data-i18n="ddHighContrast">High Contrast</div>
-                <div class="dd-sub" data-i18n="ddHighContrastSub">Stronger borders & colors</div>
-              </div>
-              <div class="toggle-switch" id="highContrastToggle"><div class="knob"></div></div>
-            </div>
-            <div class="dd-option-row">
-              <div>
-                <div class="dd-label" data-i18n="ddDarkMode">Dark Mode</div>
-                <div class="dd-sub" data-i18n="ddDarkModeSub">Easier on the eyes at night</div>
-              </div>
-              <div class="toggle-switch" id="darkModeToggle"><div class="knob"></div></div>
-            </div>
+      <div class="header-dropdown" id="a11yDropdown">
+        <div class="dd-title" data-i18n="ddAccessibility">Accessibility</div>
+        <div class="dd-option-row">
+          <div>
+            <div class="dd-label" data-i18n="ddLargeText">Larger Text</div>
+            <div class="dd-sub" data-i18n="ddLargeTextSub">Increase text size kiosk-wide</div>
           </div>
+          <div class="toggle-switch" id="largeTextToggle"><div class="knob"></div></div>
+        </div>
+        <div class="dd-option-row">
+          <div>
+            <div class="dd-label" data-i18n="ddHighContrast">High Contrast</div>
+            <div class="dd-sub" data-i18n="ddHighContrastSub">Stronger borders & colors</div>
+          </div>
+          <div class="toggle-switch" id="highContrastToggle"><div class="knob"></div></div>
+        </div>
+        <div class="dd-option-row">
+          <div>
+            <div class="dd-label" data-i18n="ddDarkMode">Dark Mode</div>
+            <div class="dd-sub" data-i18n="ddDarkModeSub">Easier on the eyes at night</div>
+          </div>
+          <div class="toggle-switch" id="darkModeToggle"><div class="knob"></div></div>
         </div>
       </div>
 
@@ -86,6 +95,8 @@
 
         <div class="filter-bar" id="filterBar"></div>
 
+        <div class="scenario-banners" id="scenarioBanners"></div>
+
         <div class="search-bar-wrap">
           <div class="search-field">
             <span id="searchIcon"></span>
@@ -104,7 +115,7 @@
           <span id="aabChevron"></span>
         </button>
 
-        <div class="search-banner warn" id="searchBanner">
+        <div class="search-banner" id="searchBanner">
           <span id="bannerIcon"></span>
           <div>
             <div id="bannerText"></div>
@@ -191,6 +202,29 @@
         </div>
       </div>
 
+      <!-- ===== Disaster Relief Mode: off-grid triage terminal ===== -->
+      <div class="disaster-screen" id="disasterScreen">
+        <div class="disaster-topbar">
+          <div class="disaster-topbar-main">
+            <div class="disaster-topbar-title">
+              <span id="disasterAlertIcon"></span>
+              <span data-i18n="disasterTopbarTitle">DISASTER RELIEF MODE ACTIVE — PUBLIC HEALTH TRIAGE</span>
+            </div>
+          </div>
+          <div class="disaster-topbar-controls">
+            <button class="disaster-icon-btn" id="disasterLangBtn"><span id="disasterLangIcon"></span><span id="disasterLangCode">EN</span></button>
+            <button class="disaster-icon-btn" id="disasterA11yBtn"><span id="disasterA11yIcon"></span></button>
+          </div>
+        </div>
+        <div class="disaster-body" id="disasterBody"></div>
+        <div class="disaster-bottom-bar">
+          <button class="disaster-bottom-btn cart" id="disasterCartBtn" disabled><span id="disasterCartIcon"></span><span id="disasterCartLabel">Cart (0)</span></button>
+          <button class="disaster-bottom-btn" id="disasterAiBtn"><span id="disasterAiIcon"></span><span data-i18n="disasterAiBtnLabel">Local AI Triage Assistant</span></button>
+          <button class="disaster-bottom-btn emergency" id="disasterEmergencyBtn"><span id="disasterEmergencyIcon"></span><span data-i18n="disasterEmergencyBtnLabel">Emergency 911</span></button>
+          <button class="disaster-exit-btn" id="disasterExitBtn" data-i18n="disasterExitBtnLabel">Exit Disaster Mode</button>
+        </div>
+      </div>
+
       <!-- ===== Nearby Care directory screen ===== -->
       <div class="care-screen" id="careScreen">
         <div class="checkout-head">
@@ -214,6 +248,22 @@
 
         <div class="checkout-body">
 
+          <!-- Step: Drug interaction warning (only inserted when the cart needs it) -->
+          <div class="checkout-step" id="stepInteraction">
+            <div class="step-scroll">
+              <div class="interaction-panel">
+                <div class="interaction-icon"><span id="interactionIcon"></span></div>
+                <div class="interaction-title" data-i18n="interactionPanelTitle">Drug Interaction Warning</div>
+                <div class="interaction-sub" data-i18n="interactionPanelSub">This order combines items with a known safety risk when taken together.</div>
+                <div id="interactionList"></div>
+              </div>
+            </div>
+            <div class="checkout-footer interaction-footer">
+              <button class="primary-btn ghost" id="interactionBackBtn" data-i18n="interactionBackBtnLabel">Go Back &amp; Adjust Cart</button>
+              <button class="primary-btn danger" id="interactionContinueBtn" data-i18n="interactionContinueBtnLabel">I Understand — Continue</button>
+            </div>
+          </div>
+
           <!-- Step 1: Order review -->
           <div class="checkout-step active" id="stepReview">
             <div class="step-scroll">
@@ -235,7 +285,7 @@
           <!-- Step: Terms & liability -->
           <div class="checkout-step" id="stepTerms">
             <div class="step-scroll">
-              <div class="terms-box">MediVend Health Kiosk — Terms of Use &amp; Liability Waiver
+              <div class="terms-box" data-i18n="termsBoxText">MediVend Health Kiosk — Terms of Use &amp; Liability Waiver
 
 This kiosk dispenses over-the-counter (OTC) products only. It does not provide medical diagnosis, treatment, or professional healthcare advice, and is not a substitute for consulting a licensed pharmacist or physician.
 
@@ -338,17 +388,49 @@ This is a student-built demo kiosk (MediVend Health Kiosk, for NC HOSA Medical I
         <div class="eicon" id="emergencyIcon"></div>
         <h1 data-i18n="emergencyTitle">EMERGENCY</h1>
         <p data-i18n="emergencyText">This machine cannot help with this. Please contact emergency services (911) or go to the nearest hospital immediately.</p>
+        <div class="emergency-er-list" id="emergencyErList"></div>
         <button class="reset-btn" id="emergencyReset" data-i18n="emergencyReset">Return to Home Screen</button>
       </div>
 
-      <!-- ===== Code viewer ===== -->
-      <div class="code-overlay" id="codeOverlay">
-        <div class="code-head">
-          <span class="title">Source Code</span>
-          <button class="close-btn" id="codeClose"><span id="codeCloseIcon"></span></button>
+      <!-- ===== Judges panel (demo controls) ===== -->
+      <div class="judges-overlay" id="judgesOverlay">
+        <div class="judges-head">
+          <span class="title" data-i18n="judgesPanelTitle">Judges Panel</span>
+          <button class="close-btn" id="judgesClose"><span id="judgesCloseIcon"></span></button>
         </div>
-        <div class="code-tabs" id="codeTabs"></div>
-        <pre class="code-body" id="codeBody">Loading source...</pre>
+        <div class="judges-body">
+
+          <button class="judges-reset-all-btn" id="resetAllScenariosBtn" data-i18n="judgesResetAll">↺ Reset All Demo Scenarios</button>
+
+          <div class="judges-section-title" data-i18n="judgesSection1">1. Environmental &amp; Crisis Events</div>
+          <button class="judges-scenario-btn" id="thermalOverrideBtn">
+            <span id="thermalOverrideIcon"></span>
+            <span id="thermalOverrideLabel">Trigger Thermal Stability Override</span>
+          </button>
+          <button class="judges-scenario-btn" id="disasterModeBtn">
+            <span id="disasterModeIcon"></span>
+            <span id="disasterModeLabel">Activate Disaster Relief Mode</span>
+          </button>
+
+          <div class="judges-section-title" data-i18n="judgesSection2">2. Inventory &amp; Mechanical Stress Events</div>
+          <button class="judges-scenario-btn" id="dispenserJamBtn">
+            <span id="dispenserJamIcon"></span>
+            <span id="dispenserJamLabel">Arm Dispenser Jam (Next Order)</span>
+          </button>
+          <div class="judges-subtitle" data-i18n="judgesStockSub">Instant Out-of-Stock Simulation — toggle any item below:</div>
+          <div id="judgesStockList"></div>
+
+          <div class="judges-section-title" data-i18n="judgesSection3">3. Clinical &amp; Safety Edge Cases</div>
+          <button class="judges-scenario-btn danger" id="interactionDemoBtn">
+            <span id="interactionDemoIcon"></span>
+            <span data-i18n="judgesInteractionBtn">Simulate Drug Interaction (Aspirin + Ibuprofen)</span>
+          </button>
+          <button class="judges-scenario-btn danger" id="redFlagBtn">
+            <span id="redFlagIcon"></span>
+            <span data-i18n="judgesRedFlagBtn">Simulate: Chest Pain &amp; Left Arm Numbness</span>
+          </button>
+
+        </div>
       </div>
 
       <!-- ===== Toast ===== -->
@@ -358,12 +440,12 @@ This is a student-built demo kiosk (MediVend Health Kiosk, for NC HOSA Medical I
   </div>
 </div>
 
-<script src="icons.js?v=3"></script>
+<script src="icons.js?v=4"></script>
 <script src="products.js?v=5"></script>
 <script src="product-art.js?v=3"></script>
-<script src="ai.js?v=2"></script>
+<script src="ai.js?v=3"></script>
 <script src="med-qa.js?v=6"></script>
-<script src="i18n.js?v=5"></script>
-<script src="kiosk.js?v=8"></script>
+<script src="i18n.js?v=9"></script>
+<script src="kiosk.js?v=14"></script>
 </body>
 </html>
