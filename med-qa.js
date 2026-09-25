@@ -159,8 +159,10 @@ function referencesSomething(text) {
 // answerable medication question. `fallbackProduct` is the last product
 // the conversation was about, used to resolve bare follow-ups like "how
 // do I use it?".
-function answerMedQuestion(text, fallbackProduct) {
-  if (!isQuestionLike(text)) return null;
+function answerMedQuestion(text, fallbackProduct, lang) {
+  // A named product plus a recognizable category ("ibuprofen warnings") counts
+  // as a question even without a question word.
+  if (!isQuestionLike(text) && !detectQuestionCategory(text)) return null;
 
   let product = findProductForQuestion(text);
   const cat = detectQuestionCategory(text);
@@ -170,7 +172,7 @@ function answerMedQuestion(text, fallbackProduct) {
   }
   if (!product) return null;
 
-  const es = currentLang === "es";
+  const es = (lang || currentLang) === "es";
   const name = product.name;
   let reply, sourced = true;
 

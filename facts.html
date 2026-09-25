@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<meta name="color-scheme" content="light dark" />
+<title>Your MediVend Purchase — Drug Facts &amp; Safety</title>
+<style>
+  :root {
+    --bg: #F1F6FB; --panel: #fff; --text: #0F172A; --muted: #475569; --border: #DAE5F0;
+    --accent: #0284C7; --danger: #B91C1C; --danger-bg: #FEF2F2; --danger-border: #FECACA;
+    --warn: #92400E; --warn-bg: #FFFBEB; --warn-border: #FDE68A; --ok: #047857;
+    --grad: linear-gradient(135deg, #0A3D62 0%, #0B5FA5 52%, #0EA5E9 130%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0B1324; --panel: #16213A; --text: #F1F5F9; --muted: #A8B5CB; --border: #2A3A5C;
+      --danger: #FCA5A5; --danger-bg: #3f1414; --danger-border: #7f1d1d; --warn: #FDE68A; --warn-bg: #3a2a06; --warn-border: #78530c; --ok: #6EE7B7; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { background: var(--grad); color: #fff; padding: 22px 18px 26px; padding-top: max(22px, env(safe-area-inset-top)); border-radius: 0 0 28px 28px; box-shadow: 0 12px 30px -10px rgba(10, 61, 98, 0.6); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 44px; height: 44px; border-radius: 13px; background: rgba(255,255,255,.18); border: 1.5px solid rgba(255,255,255,.4); display: grid; place-items: center; font-size: 26px; font-weight: 300; }
+  .brand b { display: block; font-size: 1.1rem; letter-spacing: -.2px; }
+  .brand span { font-size: .8rem; opacity: .8; }
+  .lang { margin-left: auto; background: rgba(255,255,255,.16); border: 1.5px solid rgba(255,255,255,.35); color: #fff; border-radius: 12px; padding: 8px 12px; font-weight: 700; font-size: .85rem; }
+  h1 { margin: 20px 0 4px; font-size: 1.5rem; letter-spacing: -.4px; line-height: 1.2; }
+  header p { margin: 0; opacity: .88; font-size: .95rem; }
+  main { max-width: 640px; margin: 0 auto; padding: 18px 16px 40px; display: flex; flex-direction: column; gap: 16px; }
+  .sos { display: flex; gap: 10px; }
+  .sos a { flex: 1; text-align: center; text-decoration: none; padding: 14px 10px; border-radius: 16px; font-weight: 800; font-size: .95rem; }
+  .sos .a911 { background: linear-gradient(135deg, #F04438, #D92D20); color: #fff; box-shadow: 0 10px 22px -8px rgba(217,45,32,.7); }
+  .sos .apoison { background: var(--panel); color: var(--text); border: 2px solid var(--border); }
+  .sos small { display: block; font-weight: 600; opacity: .85; font-size: .72rem; }
+  .banner { border-radius: 18px; padding: 14px 16px; border: 2px solid var(--danger-border); background: var(--danger-bg); color: var(--danger); }
+  .banner h2 { margin: 0 0 6px; font-size: 1rem; }
+  .banner .items { font-weight: 700; font-size: .85rem; margin-bottom: 4px; }
+  .banner p { margin: 0; font-size: .92rem; color: var(--text); }
+  .banner + .banner { margin-top: -6px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 22px; padding: 18px; box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 12px 30px -12px rgba(15,23,42,.18); }
+  .card h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.3px; }
+  .dose { color: var(--muted); font-weight: 600; font-size: .9rem; margin-top: 2px; }
+  .tag { display: inline-block; margin-top: 8px; margin-right: 6px; font-size: .75rem; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: rgba(2,132,199,.12); color: var(--accent); }
+  .tag.risk { background: #FBBF24; color: #3b2a00; }
+  .tag.age { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+  .fact { margin-top: 14px; padding: 12px 14px; border-radius: 14px; border-left: 5px solid var(--accent); background: rgba(2,132,199,.06); }
+  .fact.warn { border-left-color: #DC2626; background: var(--danger-bg); }
+  .fact.allergy { border-left-color: #F59E0B; background: var(--warn-bg); }
+  .fact h3 { margin: 0 0 4px; font-size: .72rem; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); }
+  .fact p { margin: 0; font-size: .98rem; }
+  .tips h2 { margin: 0 0 8px; font-size: 1.05rem; }
+  .tips ul { margin: 0; padding-left: 20px; color: var(--text); }
+  .tips li { margin: 6px 0; }
+  .note, footer { color: var(--muted); font-size: .8rem; text-align: center; }
+  .btn { align-self: center; border: 0; background: var(--grad); color: #fff; font-weight: 800; padding: 14px 24px; border-radius: 16px; font-size: 1rem; box-shadow: 0 10px 22px -8px rgba(2,132,199,.6); }
+  .empty { text-align: center; padding: 30px 10px; color: var(--muted); }
+  @media print { header, .sos, .btn, .lang { display: none; } body { background: #fff; } .card { box-shadow: none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">+</div>
+    <div><b>MediVend Health Kiosk</b><span id="tagline"></span></div>
+    <button class="lang" id="langBtn">ES</button>
+  </div>
+  <h1 id="title"></h1>
+  <p id="sub"></p>
+</header>
+<main id="main"></main>
+
+<script src="products.js"></script>
+<script src="rules.js"></script>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var lang = params.get("l") === "es" ? "es" : "en";
+  var ids = (params.get("i") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+  var products = ids.map(function (id) { return PRODUCTS.find(function (p) { return p.id === id; }); }).filter(Boolean);
+
+  var T = {
+    en: {
+      tagline: "24/7 Medical Supplies", title: "Your order: drug facts & safety",
+      sub: "Read this before you use anything you bought. Keep it for reference.",
+      call911: "Call 911", callPoison: "Poison Help", poisonSub: "1-800-222-1222 · free, 24/7", sosSub: "Emergency",
+      combo: "Do not take together", uses: "Uses", dir: "Directions", warn: "Warnings", allergy: "Allergy alert", ing: "Active ingredient",
+      risk: "Caution — dangerous if misused", age: "Age-restricted (ID required)",
+      tips: "Using medicine safely",
+      tipList: [
+        "Read the full label on the package before every use.",
+        "Never take more than the label says, and don't combine products that contain the same active ingredient.",
+        "Tell a pharmacist or doctor about other medicines you take, if you're pregnant or nursing, or before giving anything to a child.",
+        "Keep all medicines out of reach of children, in a cool, dry place.",
+        "Stop and get medical help if you have a serious reaction, trouble breathing, or swelling of the face, lips or throat."
+      ],
+      enNote: "", disclaimer: "General information only — not medical advice. Drug facts mirror each product's OTC Drug Facts label. Dispensed by a student-built demo kiosk (MediVend, for NC HOSA Medical Innovations); not a certified medical device.",
+      print: "Print / save this page", none: "No items were found for this link.", noneSub: "Scan the QR code on the kiosk screen after your purchase to open your order's facts."
+    },
+    es: {
+      tagline: "Suministros Médicos 24/7", title: "Su pedido: información y seguridad",
+      sub: "Lea esto antes de usar lo que compró. Guárdelo como referencia.",
+      call911: "Llamar al 911", callPoison: "Ayuda por Veneno", poisonSub: "1-800-222-1222 · gratis, 24/7", sosSub: "Emergencia",
+      combo: "No tomar juntos", uses: "Usos", dir: "Instrucciones", warn: "Advertencias", allergy: "Alerta de alergia", ing: "Ingrediente activo",
+      risk: "Precaución — peligroso si se usa mal", age: "Restricción de edad (se requiere ID)",
+      tips: "Use los medicamentos con seguridad",
+      tipList: [
+        "Lea la etiqueta completa del paquete antes de cada uso.",
+        "Nunca tome más de lo que dice la etiqueta, ni combine productos con el mismo ingrediente activo.",
+        "Avise a un farmacéutico o médico de otros medicamentos que tome, si está embarazada o amamantando, o antes de dar algo a un niño.",
+        "Mantenga los medicamentos fuera del alcance de los niños, en un lugar fresco y seco.",
+        "Deténgase y busque ayuda médica si tiene una reacción grave, dificultad para respirar o hinchazón de cara, labios o garganta."
+      ],
+      enNote: "La información de seguridad de cada producto se muestra en inglés por precisión.",
+      disclaimer: "Solo información general — no es consejo médico. Los datos reflejan la etiqueta de información de medicamentos de cada producto. Dispensado por un quiosco de demostración creado por estudiantes (MediVend, para NC HOSA Medical Innovations); no es un dispositivo médico certificado.",
+      print: "Imprimir / guardar esta página", none: "No se encontraron artículos para este enlace.", noneSub: "Escanee el código QR en la pantalla del quiosco después de su compra para abrir la información de su pedido."
+    }
+  };
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+  function render() {
+    var t = T[lang];
+    document.documentElement.lang = lang;
+    document.getElementById("tagline").textContent = t.tagline;
+    document.getElementById("title").textContent = t.title;
+    document.getElementById("sub").textContent = t.sub;
+    document.getElementById("langBtn").textContent = lang === "es" ? "EN" : "ES";
+    var h = '<div class="sos"><a class="a911" href="tel:911">' + esc(t.call911) + "<small>" + esc(t.sosSub) + '</small></a>' +
+            '<a class="apoison" href="tel:18002221222">' + esc(t.callPoison) + "<small>" + esc(t.poisonSub) + "</small></a></div>";
+    if (!products.length) {
+      h += '<div class="empty"><b>' + esc(t.none) + "</b><br>" + esc(t.noneSub) + "</div>";
+    } else {
+      findInteractions(products, lang).forEach(function (w) {
+        h += '<div class="banner"><h2>⚠ ' + esc(t.combo) + ": " + esc(w.title) + '</h2><div class="items">' + esc(w.names.join(" + ")) + "</div><p>" + esc(w.detail) + "</p></div>";
+      });
+      products.forEach(function (p) {
+        h += '<section class="card"><h2>' + esc(p.name) + '</h2><div class="dose">' + esc(p.dosage) + "</div>";
+        if (p.highRisk) h += '<span class="tag risk">⚠ ' + esc(t.risk) + "</span>";
+        if (p.ageRestricted) h += '<span class="tag age">' + esc(t.age) + "</span>";
+        if (p.activeIngredient) h += '<span class="tag">' + esc(t.ing) + ": " + esc(p.activeIngredient) + "</span>";
+        h += '<div class="fact"><h3>' + esc(t.uses) + "</h3><p>" + esc(p.uses) + "</p></div>";
+        h += '<div class="fact"><h3>' + esc(t.dir) + "</h3><p>" + esc(p.instructions) + "</p></div>";
+        h += '<div class="fact warn"><h3>' + esc(t.warn) + "</h3><p>" + esc(p.warnings) + "</p></div>";
+        if (p.allergyAlert && !/^none known\.?$/i.test(p.allergyAlert.trim())) {
+          h += '<div class="fact allergy"><h3>' + esc(t.allergy) + "</h3><p>" + esc(p.allergyAlert) + "</p></div>";
+        }
+        h += "</section>";
+      });
+      h += '<section class="card tips"><h2>' + esc(t.tips) + "</h2><ul>" + t.tipList.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></section>";
+      if (t.enNote) h += '<div class="note">' + esc(t.enNote) + "</div>";
+      h += '<button class="btn" onclick="window.print()">' + esc(t.print) + "</button>";
+    }
+    h += "<footer>" + esc(t.disclaimer) + "</footer>";
+    document.getElementById("main").innerHTML = h;
+  }
+
+  document.getElementById("langBtn").addEventListener("click", function () {
+    lang = lang === "es" ? "en" : "es";
+    var u = new URL(location.href); u.searchParams.set("l", lang); history.replaceState(null, "", u);
+    render();
+  });
+  render();
+})();
+</script>
+</body>
+</html>

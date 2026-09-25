@@ -115,6 +115,7 @@ const PRODUCTS = [
     dosage: "24 Caplets, 200mg",
     activeIngredient: "Ibuprofen (NSAID)",
     uses: "Temporarily relieves minor aches and pains from headache, muscle ache, backache, minor arthritis pain, menstrual cramps, toothache, and the common cold; temporarily reduces fever.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Adults: take 1 caplet every 4–6 hours with food or water. Do not exceed 6 in 24 hours.",
@@ -139,6 +140,7 @@ const PRODUCTS = [
     dosage: "24 Caplets, 500mg",
     activeIngredient: "Acetaminophen",
     uses: "Temporarily relieves minor aches and pains from headache, muscle ache, backache, minor arthritis pain, the common cold, and toothache; temporarily reduces fever.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Adults: take 2 caplets every 6 hours as needed. Do not exceed 6 caplets in 24 hours.",
@@ -160,6 +162,7 @@ const PRODUCTS = [
     dosage: "24 Tablets, 325mg",
     activeIngredient: "Aspirin (NSAID)",
     uses: "Temporarily relieves minor aches and pains from headache, muscle ache, minor arthritis pain, and toothache; temporarily reduces fever.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Adults: take 1–2 tablets every 4 hours as needed, not to exceed 12 tablets in 24 hours.",
@@ -196,6 +199,7 @@ const PRODUCTS = [
     dosage: "20 Caplets",
     activeIngredient: "Acetaminophen, Pamabrom, Pyrilamine Maleate",
     uses: "Temporarily relieves symptoms associated with premenstrual and menstrual periods, including cramps, bloating, water-weight gain, and headache.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Adults: take 2 caplets every 4–6 hours as needed. Do not exceed 8 caplets in 24 hours.",
@@ -240,6 +244,7 @@ const PRODUCTS = [
     dosage: "24 Tablets, 25mg",
     activeIngredient: "Diphenhydramine HCl",
     uses: "Temporarily relieves runny nose, sneezing, itchy watery eyes, and itching of the nose or throat from hay fever or other upper respiratory allergies.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Adults: take 1–2 tablets every 4–6 hours as needed.",
@@ -283,6 +288,7 @@ const PRODUCTS = [
     dosage: "16 Caplets",
     activeIngredient: "Dextromethorphan HBr",
     uses: "Temporarily relieves cough, body aches, headache, and fever associated with the common cold or flu.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: true,
     inStock: true,
     instructions: "Adults: take 2 caplets every 6 hours. Do not exceed 8 caplets in 24 hours.",
@@ -301,6 +307,7 @@ const PRODUCTS = [
     dosage: "0.5 fl oz",
     activeIngredient: "Oxymetazoline HCl",
     uses: "Temporarily relieves nasal congestion from the common cold, hay fever, or other upper respiratory allergies.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: false,
     instructions: "2–3 sprays per nostril, not more often than every 10–12 hours.",
@@ -364,6 +371,7 @@ const PRODUCTS = [
     dosage: "8 Tablets",
     activeIngredient: "Dimenhydrinate",
     uses: "Prevents and treats nausea, vomiting, and dizziness from motion sickness.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Take 1–2 tablets 30 minutes before travel.",
@@ -385,6 +393,7 @@ const PRODUCTS = [
     dosage: "12 Caplets",
     activeIngredient: "Loperamide HCl",
     uses: "Controls symptoms of diarrhea, including traveler's diarrhea.",
+    highRisk: true, // dangerous if misused — requires a safety acknowledgment before it can be added
     ageRestricted: false,
     inStock: true,
     instructions: "Take 2 caplets after the first loose stool, then 1 after each following, up to 4 per day.",
