@@ -1760,7 +1760,6 @@ button { font-family: inherit; }
 @keyframes ringOut { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(1.7); opacity: 0; } }
 @keyframes logoFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
 @keyframes shine { 0% { left: -60%; } 55%, 100% { left: 140%; } }
-@keyframes orbA { from { transform: translate(0, 0) scale(1); } to { transform: translate(140px, 90px) scale(1.25); } }
 @keyframes orbB { from { transform: translate(0, 0) scale(1.1); } to { transform: translate(-130px, -110px) scale(0.9); } }
 @keyframes typingDot { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-7px); opacity: 1; } }
 @keyframes workPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(2, 132, 199, 0.35); } 50% { box-shadow: 0 0 0 26px rgba(2, 132, 199, 0); } }
@@ -1772,7 +1771,6 @@ button { font-family: inherit; }
 @keyframes glowPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.35); } 50% { box-shadow: 0 0 22px 2px rgba(245, 158, 11, 0.3); } }
 
 /* ---- Idle / attract screen ---- */
-.idle-overlay::before,
 .idle-overlay::after {
   content: "";
   position: absolute;
@@ -1781,7 +1779,6 @@ button { font-family: inherit; }
   pointer-events: none;
   z-index: -1;
 }
-.idle-overlay::before { width: 560px; height: 560px; left: -160px; top: 6%; background: #38bdf8; opacity: 0.4; animation: orbA 16s ease-in-out infinite alternate; }
 .idle-overlay::after { width: 500px; height: 500px; right: -170px; bottom: 8%; background: #34d399; opacity: 0.28; animation: orbB 19s ease-in-out infinite alternate; }
 
 .idle-overlay > * { animation: riseIn 0.9s var(--ease-out) both; }
@@ -2495,7 +2492,6 @@ button { font-family: inherit; }
 .kiosk.high-contrast .dispense-screen,
 .kiosk.high-contrast .judges-overlay { background: var(--bg); }
 .kiosk.high-contrast .idle-overlay { background: var(--bg); }
-.kiosk.high-contrast .idle-overlay::before,
 .kiosk.high-contrast .idle-overlay::after,
 .kiosk.high-contrast .kiosk-header::after,
 .kiosk.high-contrast .idle-cta::after,

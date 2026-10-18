@@ -561,10 +561,10 @@ const KIOSK_FAQ = [
   },
   {
     id: "maker",
-    triggers: ["who made you", "who built you", "who made this", "who created", "who built this", "who designed", "creator", "developer", "hosa", "who is chetan", "made by"],
+    triggers: ["who made you", "who built you", "who made this", "who created", "who built this", "who designed", "creator", "developer", "who is chetan", "who is sriansh", "made by"],
     answer: {
-      en: "This kiosk was built by Chetan Nallapaneni for NC HOSA Medical Innovations, as a student-built demo of a 24/7 over-the-counter medical vending kiosk. It isn't a certified medical device or a licensed pharmacy system.",
-      es: "Este quiosco fue creado por Chetan Nallapaneni para NC HOSA Medical Innovations, como una demostración hecha por estudiantes de un quiosco médico de venta libre 24/7. No es un dispositivo médico certificado ni un sistema de farmacia con licencia.",
+      en: "This kiosk was built by Chetan Nallapaneni and Sriansh Madari as a student-built demo of a 24/7 over-the-counter medical vending kiosk. It isn't a certified medical device or a licensed pharmacy system.",
+      es: "Este quiosco fue creado por Chetan Nallapaneni y Sriansh Madari como una demostración hecha por estudiantes de un quiosco médico de venta libre 24/7. No es un dispositivo médico certificado ni un sistema de farmacia con licencia.",
     },
   },
   {
